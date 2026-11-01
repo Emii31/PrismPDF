@@ -24,11 +24,8 @@ jobs:
 
     - name: Setup Android SDK Environment
       uses: android-actions/setup-android@v3
-
-    - name: Bootstrap Missing Gradle Wrapper
-      run: |
-        gradle wrapper --gradle-version 8.7
-        chmod +x gradlew
+      with:
+        packages: 'platforms;android-35 build-tools;34.0.0 platform-tools'
 
     - name: Compile and Assemble Debug APK
       run: ./gradlew clean assembleDebug
