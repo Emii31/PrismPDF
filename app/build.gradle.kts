@@ -75,7 +75,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.3")
 
     // Jetpack Compose Complete Interface Matrix
-    val composeBom = platform("androidx.compose:compose-bom:2024.11.0")
+    val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
@@ -83,17 +83,17 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.1") // Liquid Glass material platform base
 
     // Concurrent Workflows / Coroutines Foundation
-    implementation("kotlinx.coroutines:kotlinx-coroutines-core:1.9.0")
-    implementation("kotlinx.coroutines:kotlinx-coroutines-android:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
     // OpenCV Android SDK
-    implementation("org.opencv:opencv-android:4.8.0")
+    implementation("org.opencv:opencv:4.8.0")
 
     // Local Verification / System Architecture Tests
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.11.0"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
