@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.PassportEditor" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryContainer">@color/purple_200</item>
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryContainer">@color/teal_700</item>
+        <item name="android:windowBackground">@color/black</item>
+    </style>
+</resources>

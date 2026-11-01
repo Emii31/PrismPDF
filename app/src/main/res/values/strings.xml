@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Passport Editor</string>
+    <string name="title_activity_passport_editor">Passport Editor</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_zoom_in">Zoom In</string>
+    <string name="action_zoom_out">Zoom Out</string>
+    <string name="action_reset_view">Reset View</string>
+    <string name="placeholder_select_pdf">Select a PDF to edit</string>
+    <string name="placeholder_loading">Rendering page at high DPI…</string>
+</resources>
