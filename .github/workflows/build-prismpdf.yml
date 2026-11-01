@@ -32,7 +32,7 @@ jobs:
         gradle-version: '8.7'
 
     - name: Compile and Assemble Debug APK
-      run: ./gradlew clean assembleDebug
+      run: gradle clean assembleDebug
 
     - name: Upload Installable Binary Artifact
       uses: actions/upload-artifact@v4
