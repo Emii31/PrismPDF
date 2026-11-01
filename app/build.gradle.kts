@@ -87,7 +87,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
     // OpenCV Android SDK
-    implementation("org.opencv:opencv:4.8.0")
+    implementation("org.opencv:opencv-android:4.8.0")
 
     // Local Verification / System Architecture Tests
     testImplementation("junit:junit:4.13.2")
