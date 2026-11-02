@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="claude:viewport-fit-sides" content="cover">
+    <title>PrismPDF Architecture Audit</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <style>
+        :root {
+            --bg: #090d16;
+            --surface: #111827;
+            --surface-glass: rgba(17, 24, 39, 0.7);
+            --border: #1f293d;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.2);
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+        }
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme="dark"]) {
+                --bg: #f8fafc;
+                --surface: #ffffff;
+                --surface-glass: rgba(255, 255, 255, 0.85);
+                --border: #e2e8f0;
+                --text: #0f172a;
+                --text-muted: #64748b;
+                --accent: #2563eb;
+                --accent-glow: rgba(37, 99, 235, 0.15);
+                --danger: #dc2626;
+                --danger-bg: rgba(220, 38, 38, 0.08);
+                --warning: #d97706;
+                --warning-bg: rgba(217, 119, 6, 0.08);
+                --success: #059669;
+                --success-bg: rgba(5, 150, 105, 0.08);
+                color-scheme: light;
+            }
+        }
+        :root[data-theme="dark"] {
+            --bg: #090d16;
+            --surface: #111827;
+            --surface-glass: rgba(17, 24, 39, 0.7);
+            --border: #1f293d;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.2);
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            color-scheme: dark;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            padding-left: max(16px, env(safe-area-inset-left, 0px));
+            padding-right: max(16px, env(safe-area-inset-right, 0px));
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        code, pre {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .glass-card {
+            background: var(--surface-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-16">
+    <div class="max-w-5xl mx-auto px-4 pt-10">
+
+        <!-- Header -->
+        <header class="mb-12 border-b border-[var(--border)] pb-8">
+            <div class="flex items-center space-x-3 mb-3">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--accent)]/30 tracking-wide uppercase">Technical Audit & Inventory</span>
+                <span class="text-xs text-[var(--text-muted)] font-mono">Module: PrismPDF Android AOSP</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">PrismPDF Core Architecture Report</h1>
+            <p class="text-[var(--text-muted)] text-base md:text-lg max-w-3xl">
+                Comprehensive system audit of active codebase files, OpenCV computer vision pipelines, coordinate mapping viewports, and identification of text-parsing functional shortcomings.
+            </p>
+        </header>
+
+        <!-- Executive Summary Box -->
+        <div class="glass-card rounded-2xl p-6 mb-10 border-l-4 border-l-[var(--warning)]">
+            <h2 class="text-lg font-bold mb-2 flex items-center text-[var(--warning)]">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                Architectural Finding: Static "Sticker Injector" vs. Semantic PDF Editing
+            </h2>
+            <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+                The current implementation of <code>PrismPDFEditorScreen</code> and <code>DocumentSessionViewModel</code> executes touch taps by mapping coordinates, running background OpenCV inpainting to erase local pixel regions, and overlaying a hardcoded string or a static stub (e.g. <code>"Salary Breakups"</code> or <code>"New Text"</code>). It lacks a true PDF character extraction or Optical Character Recognition (OCR) parser bound to text vector streams, causing it to operate as a visual patcher rather than an intelligent semantic document modifier.
+            </p>
+        </div>
+
+        <!-- SECTION 1: REPOSITORY INVENTORY -->
+        <section class="mb-14">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] font-bold font-mono">01</div>
+                <h2 class="text-2xl font-bold tracking-tight">Repository Inventory & Module Overview</h2>
+            </div>
+
+            <p class="text-[var(--text-muted)] mb-6 text-sm">
+                Complete mapping of all active source files across the workspace <code>/data/data/com.termux/files/home/passport-editor</code>:
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Group 1: PDF & Render -->
+                <div class="glass-card rounded-xl p-5">
+                    <h3 class="font-semibold text-base mb-3 flex items-center text-[var(--accent)]">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        PDF Rendering & Byte-Stream
+                    </h3>
+                    <ul class="space-y-2 text-xs font-mono text-[var(--text-muted)]">
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">PdfPageRendererHelper.kt</strong> — Decodes input PDF Uris into high-DPI (300–450 DPI) immutable bitmaps via Android AOSP <code>PdfRenderer</code>.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">PDFMetadataPreservationEngine.kt</strong> — Lossless preservation of PDF header signatures, XMP metadata, and document catalogs.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">PdfFlatteningService.kt</strong> — Flattens vector overlays and bitmap adjustments back into immutable page byte streams.</li>
+                    </ul>
+                </div>
+
+                <!-- Group 2: Computer Vision -->
+                <div class="glass-card rounded-xl p-5">
+                    <h3 class="font-semibold text-base mb-3 flex items-center text-[var(--accent)]">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                        CV & Texture Synthesis (OpenCV)
+                    </h3>
+                    <ul class="space-y-2 text-xs font-mono text-[var(--text-muted)]">
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">MultiChannelEdgeTracker.kt</strong> — Splits RGBA bitmaps into RGB channels, applies Gaussian blur and Canny edge detection, and merges with morphological closing for microprint snapping.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">BackgroundTextureSynthesizer.kt</strong> — Inpaints masked target regions using OpenCV <code>Photo.inpaint</code> (Telea/Navier-Stokes) to erase text while preserving background patterns.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">OpenCVInitializer.kt</strong> — JNI static library loading fallback guard (<code>System.loadLibrary("opencv_java4")</code>).</li>
+                    </ul>
+                </div>
+
+                <!-- Group 3: Viewports & Canvas -->
+                <div class="glass-card rounded-xl p-5">
+                    <h3 class="font-semibold text-base mb-3 flex items-center text-[var(--accent)]">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                        Viewports, Mapping & Compose
+                    </h3>
+                    <ul class="space-y-2 text-xs font-mono text-[var(--text-muted)]">
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">PDFCoordinateMapper.kt</strong> — Bi-directional screen-to-PDF coordinate transformation matrix (1/72 inch points).</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">SubPixelSnappingEngine.kt</strong> — Snaps touch coordinates to nearest high-contrast edge vector.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">PassportEditorCanvas.kt</strong> — Custom hardware-accelerated Compose Canvas rendering immutable bitmaps and vector overlays.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">InteractiveTextOverlayWidget.kt</strong> — Sub-pixel vector text input widget.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">MultiPageThumbnailCarousel.kt</strong> — LazyRow multi-page document navigation tray.</li>
+                    </ul>
+                </div>
+
+                <!-- Group 4: Build & Manifest -->
+                <div class="glass-card rounded-xl p-5">
+                    <h3 class="font-semibold text-base mb-3 flex items-center text-[var(--accent)]">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                        Build Structures & Manifest
+                    </h3>
+                    <ul class="space-y-2 text-xs font-mono text-[var(--text-muted)]">
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">app/build.gradle.kts</strong> — CompileSdk 34, minSdk 26, targetSdk 34, Compose BOM 2024.09.00, Coroutines 1.8.0, OpenCV Android SDK 4.9.0, 16 KB ELF page alignment (<code>useLegacyPackaging = false</code>).</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">AndroidManifest.xml</strong> — PrismPDF app label, hardware acceleration enabled, activity declarations.</li>
+                        <li class="p-2 rounded bg-[var(--bg)] border border-[var(--border)]"><strong class="text-[var(--text)]">build_fix.py / aapt2_wrapper.py</strong> — Python automation wrappers resolving Termux/AAPT2 daemon binary execution errors.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 2: CODE ANALYSIS -->
+        <section class="mb-14">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-[var(--warning)]/10 flex items-center justify-center text-[var(--warning)] font-bold font-mono">02</div>
+                <h2 class="text-2xl font-bold tracking-tight">Code Analysis & Functional Shortcomings</h2>
+            </div>
+
+            <div class="space-y-6">
+
+                <!-- Shortcoming 1 -->
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-base text-[var(--text)]">1. Tap Handling Pipeline & Pixel Vector Processing</h3>
+                        <span class="px-2.5 py-1 rounded text-xs font-mono bg-[var(--danger-bg)] text-[var(--danger)]">Shortcoming</span>
+                    </div>
+                    <p class="text-sm text-[var(--text-muted)] leading-relaxed mb-4">
+                        In <code>PrismPDFEditorScreen.kt</code>, screen taps are captured via <code>detectTapGestures</code> in <code>CORNER_TEXT_INJECTOR</code> mode. The touch offset is converted via <code>mapper.screenToPdf()</code> and passed to <code>SubPixelSnappingEngine</code> using an OpenCV edge tracking binary mask. However, this only snaps to geometric edges (lines/borders), not text boundaries.
+                    </p>
+                    <div class="bg-[var(--bg)] rounded-lg p-4 font-mono text-xs text-[var(--text-muted)] border border-[var(--border)]">
+                        <span class="text-[var(--danger)]">// Current behavior in PrismPDFEditorScreen.kt:</span><br>
+                        val extractedDocText = try { "Salary Breakups" } catch (e: Exception) { "" }<br>
+                        <span class="text-[var(--warning)]">// Issue: Hardcoded stub string instead of inspecting underlying PDF text streams or OCR bboxes.</span>
+                    </div>
+                </div>
+
+                <!-- Shortcoming 2 -->
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-base text-[var(--text)]">2. Absence of True Text-Parsing / OCR Extraction Hooks</h3>
+                        <span class="px-2.5 py-1 rounded text-xs font-mono bg-[var(--danger-bg)] text-[var(--danger)]">Missing Module</span>
+                    </div>
+                    <p class="text-sm text-[var(--text-muted)] leading-relaxed mb-4">
+                        The repository contains robust CV pipelines for image inpainting (<code>BackgroundTextureSynthesizer</code>) and edge detection (<code>MultiChannelEdgeTracker</code>), but lacks a character recognition (OCR) or PDF text-stream parser (such as Apache PDFBox text stripper or ML Kit Text Recognition). Consequently, when a user taps a line of text, the system cannot query what word is printed at those PDF coordinates.
+                    </p>
+                </div>
+
+                <!-- Shortcoming 3 -->
+                <div class="glass-card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-base text-[var(--text)]">3. Why Static Layout Elements Are Generated</h3>
+                        <span class="px-2.5 py-1 rounded text-xs font-mono bg-[var(--warning-bg)] text-[var(--warning)]">Root Cause</span>
+                    </div>
+                    <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+                        Because the application renders documents into high-DPI immutable bitmaps via `PdfRenderer`, the underlying text semantics of the PDF are rasterized into pixels. Without an active bounding-box text-lookup engine or OCR indexing pass during workspace initialization, the editor treats the document purely as an image canvas. Tapping erases a rectangular pixel patch and places an empty or stub text overlay on top, resulting in static "sticker injection" behavior.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 3: RECOVERY BASELINE -->
+        <section class="mb-14">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-8 h-8 rounded-lg bg-[var(--success)]/10 flex items-center justify-center text-[var(--success)] font-bold font-mono">03</div>
+                <h2 class="text-2xl font-bold tracking-tight">The Recovery & Implementation Baseline</h2>
+            </div>
+
+            <div class="glass-card rounded-xl p-6">
+                <p class="text-sm text-[var(--text-muted)] leading-relaxed mb-6">
+                    To transition from a static raster patcher to a true semantic PDF editor, the architecture must integrate a text bounding-box extraction pipeline. Here is the exact roadmap and decoupled structure required:
+                </p>
+
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-6 h-6 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] flex items-center justify-center text-xs font-bold mt-0.5">1</div>
+                        <div>
+                            <h4 class="font-semibold text-sm text-[var(--text)]">PDF Text Stream Indexing Engine</h4>
+                            <p class="text-xs text-[var(--text-muted)]">Integrate Android PDFBox or native `PdfRenderer` text-character bounding box querying during `loadDocumentWorkspace()` to build an in-memory spatial index of text strings and their exact PDF point coordinates.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="w-6 h-6 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] flex items-center justify-center text-xs font-bold mt-0.5">2</div>
+                        <div>
+                            <h4 class="font-semibold text-sm text-[var(--text)]">Spatial Hit-Testing Lookup</h4>
+                            <p class="text-xs text-[var(--text-muted)]">Replace stub strings (`"Salary Breakups"`) in `PrismPDFEditorScreen` with a spatial lookup query: `spatialIndex.findTextAt(clickPdfPoint)` to retrieve the exact word/sentence underneath the touch pointer.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="w-6 h-6 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] flex items-center justify-center text-xs font-bold mt-0.5">3</div>
+                        <div>
+                            <h4 class="font-semibold text-sm text-[var(--text)]">Font Metrics & Typeface Matching</h4>
+                            <p class="text-xs text-[var(--text-muted)]">Extract source font size, weight, and typeface metrics from the PDF stream so replacement overlays match surrounding document typography flawlessly.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center text-xs text-[var(--text-muted)] border-t border-[var(--border)] pt-6">
+            PrismPDF Systems Architecture Report • Generated for Authorized Engineering Review • 2026
+        </footer>
+
+    </div>
+</body>
+</html>

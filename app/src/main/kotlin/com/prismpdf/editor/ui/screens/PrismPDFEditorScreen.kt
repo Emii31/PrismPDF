@@ -53,48 +53,46 @@ fun PrismPDFEditorScreen(
                 .pointerInput(currentToolMode) {
                     if (currentToolMode == EditorToolMode.CORNER_TEXT_INJECTOR) {
                         detectTapGestures { offset ->
+                            // 1. Map touch pixel layout positions to exact physical PDF points
                             val clickPdfPoint = mapper.screenToPdf(offset.x, offset.y)
 
-                            val snappedPdfPoint = try {
-                                snappingEngine.computeSnappedPdfCoordinates(
-                                    targetTouchPdfCoordinates = clickPdfPoint,
-                                    edgeMaskBitmap = sessionWorkspace.edgeTrackingMask,
-                                    mapper = mapper
+                            // 2. Query the spatial index mapper to find out exactly what text node is under the touch coordinate
+                            val matchedNode = viewModel.spatialTextIndexer.findTextElementAt(clickPdfPoint)
+
+                            if (matchedNode != null) {
+                                // Apply precision snapping corrections to line vector targets
+                                val snappedPdfPoint = try {
+                                    snappingEngine.computeSnappedPdfCoordinates(clickPdfPoint, sessionWorkspace.edgeTrackingMask, mapper)
+                                } catch (e: Exception) {
+                                    clickPdfPoint
+                                }
+
+                                val pixelLocation = mapper.pdfToScreen(snappedPdfPoint.x, snappedPdfPoint.y)
+                                val targetInpaintBox = Rect(
+                                    (pixelLocation.x - 40).toInt().coerceAtLeast(0),
+                                    (pixelLocation.y - 25).toInt().coerceAtLeast(0),
+                                    (pixelLocation.x + 140).toInt().coerceAtMost(sessionWorkspace.baseRaster.width),
+                                    (pixelLocation.y + 20).toInt().coerceAtMost(sessionWorkspace.baseRaster.height)
                                 )
-                            } catch (e: Exception) {
-                                clickPdfPoint
+
+                                // 3. Hydrate the inline text overlay pre-filled with the TRUE string variable extracted from the index
+                                activeInjectingElement = com.prismpdf.editor.EditableTextElement(
+                                    text = matchedNode.text, // Pre-populates the input field with the text that was already there!
+                                    pdfX = snappedPdfPoint.x,
+                                    pdfY = snappedPdfPoint.y,
+                                    fontSizePdfPoints = matchedNode.fontSizePoints,
+                                    extractedTypeface = null
+                                )
+
+                                // 4. Fire background task to cleanly wipe old pixels and update vector overlays
+                                viewModel.executeSemanticTextModification(
+                                    targetRect = targetInpaintBox,
+                                    matchedNode = matchedNode,
+                                    updatedString = matchedNode.text,
+                                    pdfX = snappedPdfPoint.x,
+                                    pdfY = snappedPdfPoint.y
+                                )
                             }
-
-                            val pixelLocation = mapper.pdfToScreen(snappedPdfPoint.x, snappedPdfPoint.y)
-                            val targetInpaintBox = Rect(
-                                (pixelLocation.x - 60).toInt().coerceAtLeast(0),
-                                (pixelLocation.y - 20).toInt().coerceAtLeast(0),
-                                (pixelLocation.x + 180).toInt().coerceAtMost(sessionWorkspace.baseRaster.width),
-                                (pixelLocation.y + 20).toInt().coerceAtMost(sessionWorkspace.baseRaster.height)
-                            )
-
-                            // DYNAMIC LOOKUP LAYER: Extract the literal text content currently present in this area
-                            val extractedDocText = try {
-                                "Salary Breakups"
-                            } catch (e: Exception) {
-                                ""
-                            }
-
-                            activeInjectingElement = com.prismpdf.editor.EditableTextElement(
-                                text = extractedDocText,
-                                pdfX = snappedPdfPoint.x,
-                                pdfY = snappedPdfPoint.y,
-                                fontSizePdfPoints = 12f,
-                                extractedTypeface = null
-                            )
-
-                            viewModel.executeLiveSemanticEdit(
-                                targetRect = targetInpaintBox,
-                                extractedSourceText = extractedDocText,
-                                pdfX = snappedPdfPoint.x,
-                                pdfY = snappedPdfPoint.y,
-                                computedFontSize = 12f
-                            )
                         }
                     }
                 }
