@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.prismpdf.editor"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.prismpdf.editor"
         minSdk = 26 // Target API 26 (Android 8.0) to capture core modern graphics pipelines
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
 
@@ -54,7 +54,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14" // Aligned to Jetpack Compose Runtime targets
+        kotlinCompilerExtensionVersion = "1.5.11" // Aligned to Kotlin 1.9.23
     }
 
     packaging {
@@ -64,13 +64,15 @@ android {
         jniLibs {
             // Keep native OpenCV and Pdfium .so library dependencies intact during bundling
             pickFirsts += "lib/**/libopencv_java4.so"
+            // Force the packaging tools to keep native libraries uncompressed and 16 KB page-aligned
+            useLegacyPackaging = false
         }
     }
 }
 
 dependencies {
     // Android Platform Support Core
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
 
@@ -87,7 +89,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
     // OpenCV Android SDK
-    implementation("org.opencv:opencv-android:4.8.0")
+    implementation("org.opencv:opencv:4.9.0")
+    implementation("com.google.android.material:material:1.12.0")
 
     // Local Verification / System Architecture Tests
     testImplementation("junit:junit:4.13.2")
