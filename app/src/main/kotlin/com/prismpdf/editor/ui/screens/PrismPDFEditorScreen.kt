@@ -1,6 +1,9 @@
 package com.prismpdf.editor.ui.screens
 
+import android.graphics.PointF
 import android.graphics.Rect
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,13 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.prismpdf.editor.PDFCoordinateMapper
 import com.prismpdf.editor.SubPixelSnappingEngine
-import com.prismpdf.editor.EditableTextElement
 import com.prismpdf.editor.PassportEditorCanvas
 import com.prismpdf.editor.InteractiveTextOverlayWidget
 import com.prismpdf.editor.MultiPageThumbnailCarousel
@@ -38,24 +39,14 @@ fun PrismPDFEditorScreen(
     val mapper = remember { PDFCoordinateMapper() }
     val snappingEngine = remember { SubPixelSnappingEngine() }
     var currentToolMode by remember { mutableStateOf(EditorToolMode.PAN_AND_ZOOM) }
-    var activeInjectingElement by remember { mutableStateOf<EditableTextElement?>(null) }
-    val standardFontScalePdfPoints by remember { mutableFloatStateOf(10f) }
+    var activeInjectingElement by remember { mutableStateOf<com.prismpdf.editor.EditableTextElement?>(null) }
 
-    // Explicitly seed basic layout boundary properties to prevent initialization crashes
     LaunchedEffect(Unit) {
         mapper.updateMatrix(1f, 0f, 0f)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .onGloballyPositioned { coordinates ->
-                if (mapper.getScale() == 0f) {
-                    mapper.updateMatrix(1f, 0f, 0f)
-                }
-            }
-    ) {
-        // LAYER 1: Core Rendering Framework
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Canvas Interaction Layer with strict safety bounds
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -64,38 +55,40 @@ fun PrismPDFEditorScreen(
                         detectTapGestures { offset ->
                             val clickPdfPoint = mapper.screenToPdf(offset.x, offset.y)
 
-                            val snappedPdfPoint = snappingEngine.computeSnappedPdfCoordinates(
-                                targetTouchPdfCoordinates = clickPdfPoint,
-                                edgeMaskBitmap = sessionWorkspace.edgeTrackingMask,
-                                mapper = mapper
-                            )
+                            // Safe resolution call preventing pointer drift crashes
+                            val snappedPdfPoint = try {
+                                snappingEngine.computeSnappedPdfCoordinates(
+                                    targetTouchPdfCoordinates = clickPdfPoint,
+                                    edgeMaskBitmap = sessionWorkspace.edgeTrackingMask,
+                                    mapper = mapper
+                                )
+                            } catch (e: Exception) {
+                                clickPdfPoint
+                            }
 
                             val pixelLocation = mapper.pdfToScreen(snappedPdfPoint.x, snappedPdfPoint.y)
-
-                            val inpaintWidth = 160
-                            val inpaintHeight = 40
                             val targetInpaintBox = Rect(
-                                (pixelLocation.x - (inpaintWidth / 4)).toInt().coerceAtLeast(0),
-                                (pixelLocation.y - (inpaintHeight / 2)).toInt().coerceAtLeast(0),
-                                (pixelLocation.x + (inpaintWidth * 3 / 4)).toInt().coerceAtMost(sessionWorkspace.baseRaster.width),
-                                (pixelLocation.y + (inpaintHeight / 2)).toInt().coerceAtMost(sessionWorkspace.baseRaster.height)
+                                (pixelLocation.x - 50).toInt().coerceAtLeast(0),
+                                (pixelLocation.y - 20).toInt().coerceAtLeast(0),
+                                (pixelLocation.x + 100).toInt().coerceAtMost(sessionWorkspace.baseRaster.width),
+                                (pixelLocation.y + 20).toInt().coerceAtMost(sessionWorkspace.baseRaster.height)
                             )
 
-                            activeInjectingElement = EditableTextElement(
-                                text = "",
+                            activeInjectingElement = com.prismpdf.editor.EditableTextElement(
+                                text = "New Text",
                                 pdfX = snappedPdfPoint.x,
                                 pdfY = snappedPdfPoint.y,
-                                fontSizePdfPoints = standardFontScalePdfPoints,
+                                fontSizePdfPoints = 14f,
                                 extractedTypeface = null
                             )
 
                             viewModel.performTargetTextEdit(
                                 targetRect = targetInpaintBox,
                                 placeholderToken = "",
-                                initialText = "",
+                                initialText = "New Text",
                                 pdfX = snappedPdfPoint.x,
                                 pdfY = snappedPdfPoint.y,
-                                fontSize = standardFontScalePdfPoints
+                                fontSize = 14f
                             )
                         }
                     }
@@ -109,43 +102,36 @@ fun PrismPDFEditorScreen(
             )
         }
 
-        // LAYER 2: Soft Text Input Overlays
-        activeInjectingElement?.let { targetOverlay ->
+        // Live text input injector mapping focus loops
+        activeInjectingElement?.let { element ->
             InteractiveTextOverlayWidget(
-                textElement = targetOverlay,
+                textElement = element,
                 mapper = mapper,
-                onTextChangeCompleted = { finalizedString ->
-                    targetOverlay.text = finalizedString
+                onTextChangeCompleted = { text ->
+                    element.text = text
                     activeInjectingElement = null
                 }
             )
         }
 
-        // LAYER 3: Controls Header
+        // Frosted Control Bar Layout Panel
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 28.dp, start = 16.dp, end = 16.dp)
                 .liquidGlassCard()
-                .padding(14.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onExitWorkspace) {
-                Text(text = "❌", fontSize = 16.sp)
-            }
-            Text("PRISMPDF WORKSPACE WORKBENCH", fontSize = 12.sp, fontWeight = FontWeight.Black)
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF70A3FF)),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
-            ) {
-                Text("Save", color = Color.White, fontSize = 12.sp)
+            IconButton(onClick = onExitWorkspace) { Text("❌", color = Color.Black) }
+            Text("PRISMPDF WORKSPACE", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF70A3FF))) {
+                Text("Save", color = Color.White)
             }
         }
 
-        // LAYER 4: Dynamic Bottom Navigation Preview and Navigation Panel
+        // Active Glassmorphic Floating Tool Controller
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -158,40 +144,30 @@ fun PrismPDFEditorScreen(
                 currentPageIndex = 0,
                 onPageSelected = {}
             )
-
             Spacer(modifier = Modifier.height(12.dp))
-
+            // Floating Navigation Panel supporting dynamic visual state highlights
             Row(
                 modifier = Modifier
                     .liquidGlassCard()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(24.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Button(
+                FilledTonalButton(
                     onClick = { currentToolMode = EditorToolMode.PAN_AND_ZOOM },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (currentToolMode == EditorToolMode.PAN_AND_ZOOM) Color(0x3370A3FF) else Color.Transparent
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = if (currentToolMode == EditorToolMode.PAN_AND_ZOOM) Color(0x3D70A3FF) else Color.Transparent
+                    )
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "🔍", fontSize = 20.sp)
-                        Text(text = "Pan & Zoom", fontSize = 10.sp, color = Color.Black)
-                    }
+                    Text("🔍 View", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
-
-                Button(
+                FilledTonalButton(
                     onClick = { currentToolMode = EditorToolMode.CORNER_TEXT_INJECTOR },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (currentToolMode == EditorToolMode.CORNER_TEXT_INJECTOR) Color(0x3370A3FF) else Color.Transparent
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = if (currentToolMode == EditorToolMode.CORNER_TEXT_INJECTOR) Color(0x3D70A3FF) else Color.Transparent
+                    )
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "✍️", fontSize = 20.sp)
-                        Text(text = "Precision Edit", fontSize = 10.sp, color = Color.Black)
-                    }
+                    Text("✍️ Snap Edit", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
         }
