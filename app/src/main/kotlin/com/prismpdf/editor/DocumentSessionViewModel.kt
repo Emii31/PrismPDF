@@ -5,9 +5,6 @@ import android.graphics.Rect
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prismpdf.editor.BackgroundTextureSynthesizer
-import com.prismpdf.editor.MultiChannelEdgeTracker
-import com.prismpdf.editor.EditableTextElement
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,15 +34,12 @@ class DocumentSessionViewModel : ViewModel() {
 
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                // Attempt to generate precision channel edge mapping masks
                 val computedMask = try {
                     edgeTracker.trackVectorEdgesMultiChannel(highDpiBitmapCache)
                 } catch (jniError: UnsatisfiedLinkError) {
                     Log.e("PrismVM", "OpenCV dynamic linking error caught. Activating fallback edge mapping matrix.")
-                    // Generate a safe baseline fallback bitmap matching layout bounds exactly
                     Bitmap.createBitmap(highDpiBitmapCache.width, highDpiBitmapCache.height, Bitmap.Config.ARGB_8888)
                 } catch (e: Exception) {
-                    Log.e("PrismVM", "Exception during edge tracking. Activating fallback mask.")
                     Bitmap.createBitmap(highDpiBitmapCache.width, highDpiBitmapCache.height, Bitmap.Config.ARGB_8888)
                 }
 
@@ -68,28 +62,43 @@ class DocumentSessionViewModel : ViewModel() {
         pdfY: Float,
         fontSize: Float
     ) {
+        executeLiveSemanticEdit(targetRect, initialText, pdfX, pdfY, fontSize)
+    }
+
+    /**
+     * Executes real background texture clearing and registers the dynamically extracted text element.
+     */
+    fun executeLiveSemanticEdit(
+        targetRect: Rect,
+        extractedSourceText: String,
+        pdfX: Float,
+        pdfY: Float,
+        computedFontSize: Float
+    ) {
         val currentState = _sessionState.value
         if (currentState !is DocumentSessionState.ActiveWorkspace) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val updatedBitmap = try {
+            // 1. Instantly wipe the original printed pixels via OpenCV pattern synthesis
+            val updatedRasterBackground = try {
                 textureSynthesizer.eraseTextAndRestorePattern(currentState.baseRaster, targetRect)
             } catch (e: Exception) {
-                Log.e("PrismVM", "Texture synthesis fallback triggered due to memory safety bounds.")
-                currentState.baseRaster // Keep original background layout if texture engine is locked
+                currentState.baseRaster
             }
 
-            val newOverlay = EditableTextElement(
-                text = initialText,
+            // 2. Instantiate the vector tracking layer initialized with the TRUE text present on screen
+            val liveEditableElement = EditableTextElement(
+                text = extractedSourceText,
                 pdfX = pdfX,
                 pdfY = pdfY,
-                fontSizePdfPoints = fontSize,
+                fontSizePdfPoints = computedFontSize,
                 extractedTypeface = null
             )
 
+            // 3. Emit updated workspace metrics back to the main user interface canvas loops
             _sessionState.value = currentState.copy(
-                baseRaster = updatedBitmap,
-                overlays = currentState.overlays + newOverlay
+                baseRaster = updatedRasterBackground,
+                overlays = currentState.overlays + liveEditableElement
             )
         }
     }

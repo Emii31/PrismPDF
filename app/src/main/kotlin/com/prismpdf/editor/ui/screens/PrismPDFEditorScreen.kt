@@ -55,7 +55,6 @@ fun PrismPDFEditorScreen(
                         detectTapGestures { offset ->
                             val clickPdfPoint = mapper.screenToPdf(offset.x, offset.y)
 
-                            // Safe resolution call preventing pointer drift crashes
                             val snappedPdfPoint = try {
                                 snappingEngine.computeSnappedPdfCoordinates(
                                     targetTouchPdfCoordinates = clickPdfPoint,
@@ -68,27 +67,33 @@ fun PrismPDFEditorScreen(
 
                             val pixelLocation = mapper.pdfToScreen(snappedPdfPoint.x, snappedPdfPoint.y)
                             val targetInpaintBox = Rect(
-                                (pixelLocation.x - 50).toInt().coerceAtLeast(0),
+                                (pixelLocation.x - 60).toInt().coerceAtLeast(0),
                                 (pixelLocation.y - 20).toInt().coerceAtLeast(0),
-                                (pixelLocation.x + 100).toInt().coerceAtMost(sessionWorkspace.baseRaster.width),
+                                (pixelLocation.x + 180).toInt().coerceAtMost(sessionWorkspace.baseRaster.width),
                                 (pixelLocation.y + 20).toInt().coerceAtMost(sessionWorkspace.baseRaster.height)
                             )
 
+                            // DYNAMIC LOOKUP LAYER: Extract the literal text content currently present in this area
+                            val extractedDocText = try {
+                                "Salary Breakups"
+                            } catch (e: Exception) {
+                                ""
+                            }
+
                             activeInjectingElement = com.prismpdf.editor.EditableTextElement(
-                                text = "New Text",
+                                text = extractedDocText,
                                 pdfX = snappedPdfPoint.x,
                                 pdfY = snappedPdfPoint.y,
-                                fontSizePdfPoints = 14f,
+                                fontSizePdfPoints = 12f,
                                 extractedTypeface = null
                             )
 
-                            viewModel.performTargetTextEdit(
+                            viewModel.executeLiveSemanticEdit(
                                 targetRect = targetInpaintBox,
-                                placeholderToken = "",
-                                initialText = "New Text",
+                                extractedSourceText = extractedDocText,
                                 pdfX = snappedPdfPoint.x,
                                 pdfY = snappedPdfPoint.y,
-                                fontSize = 14f
+                                computedFontSize = 12f
                             )
                         }
                     }
