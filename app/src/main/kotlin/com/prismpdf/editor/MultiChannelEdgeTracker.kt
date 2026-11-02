@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.sp
 
 
 import android.graphics.Bitmap
+import android.util.Log
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.CvType
@@ -24,6 +25,14 @@ class MultiChannelEdgeTracker {
      * @return A processing tracking mask showing continuous edge vectors for canvas snapping.
      */
     fun trackVectorEdgesMultiChannel(inputBitmap: Bitmap): Bitmap {
+        // Validation check to prevent execution crashes if runtime loading delays occur
+        try {
+            Mat.zeros(1, 1, CvType.CV_8UC1).release()
+        } catch (e: UnsatisfiedLinkError) {
+            Log.e("EdgeTracker", "JNI pointer unhydrated at processing boundary. Forcing runtime re-link.")
+            System.loadLibrary("opencv_java4")
+        }
+
         val sourceMat = Mat()
         Utils.bitmapToMat(inputBitmap, sourceMat)
 

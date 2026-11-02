@@ -1,6 +1,7 @@
 package com.prismpdf.editor.ui
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
@@ -24,6 +25,9 @@ import com.prismpdf.editor.DocumentSessionViewModel
 import com.prismpdf.editor.DocumentSessionState
 import com.prismpdf.editor.util.PdfPageRendererHelper
 
+// Explicit static hook executing hardware JNI registration
+private const val TAG = "PrismPDFInit"
+
 enum class ApplicationState {
     SPLASH_PRESENTATION,
     MAIN_WORKSPACE,
@@ -32,6 +36,26 @@ enum class ApplicationState {
 
 @Composable
 fun PrismPDFApplicationCore() {
+    // Force native initialization verification inside the main lifecycle anchor loop
+    LaunchedEffect(Unit) {
+        try {
+            // Check if the embedded JNI wrappers link successfully
+            if (org.opencv.android.OpenCVLoader.initDebug()) {
+                Log.d(TAG, "OpenCV native JNI link state initialized successfully via wrapper check.")
+            } else {
+                Log.e(TAG, "OpenCV wrapper check reported false. Attempting fallback static system library load injection...")
+                System.loadLibrary("opencv_java4")
+            }
+        } catch (e: UnsatisfiedLinkError) {
+            Log.e(TAG, "Direct wrapper load assertion failed. Injecting explicit dynamic system library mapping link.", e)
+            try {
+                System.loadLibrary("opencv_java4") // Directly binds compile-time generated JNI binaries
+            } catch (fatal: Exception) {
+                Log.e(TAG, "CRITICAL: Native binary linkage pipeline completely blocked.", fatal)
+            }
+        }
+    }
+
     var currentAppState by remember { mutableStateOf(ApplicationState.SPLASH_PRESENTATION) }
     val sessionViewModel: DocumentSessionViewModel = viewModel()
     val context = LocalContext.current
