@@ -1,0 +1,6 @@
+INVOKED: ['m']
+RUN DAEMON CMD: /data/data/com.termux/files/home/android-sdk/build-tools/34.0.0/aapt2 compile --legacy -o /data/data/com.termux/files/home/.gradle/caches/transforms-4/1c575307b646b1c76d71be41cc58da9e-8ee31595-2ba0-4d0f-9995-45bb6d7e0c34/transformed/androidx.core /data/data/com.termux/files/home/.gradle/caches/transforms-4/025fc4aa65fc15a412d955e8d3385291/transformed/core-1.13.1/res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png --source-path /data/data/com.termux/files/home/.gradle/caches/transforms-4/025fc4aa65fc15a412d955e8d3385291/transformed/core-1.13.1/res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png
+RES CODE: 0, OUT len: 0, ERR len: 0
+INVOKED: ['m']
+RUN DAEMON CMD: /data/data/com.termux/files/home/android-sdk/build-tools/34.0.0/aapt2 compile --legacy -o /data/data/com.termux/files/home/.gradle/caches/transforms-4/1c575307b646b1c76d71be41cc58da9e-35cabad7-33c0-4ff8-8f79-5b816f2a3fd1/transformed/androidx.core /data/data/com.termux/files/home/.gradle/caches/transforms-4/025fc4aa65fc15a412d955e8d3385291/transformed/core-1.13.1/res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png --source-path /data/data/com.termux/files/home/.gradle/caches/transforms-4/025fc4aa65fc15a412d955e8d3385291/transformed/core-1.13.1/res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png
+RES CODE: 0

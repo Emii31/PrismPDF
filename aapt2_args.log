@@ -1,0 +1,4 @@
+CMD: /data/data/com.termux/files/home/android-sdk/build-tools/34.0.0/aapt2 compile --legacy -o /data/data/com.termux/files/home/.gradle/caches/transforms-4/1c575307b646b1c76d71be41cc58da9e-1351f775-d4f2-42cd-a2bf-ddca06b6a969/transformed/androidx.core /data/data/com.termux/files/home/.gradle/caches/transforms-4/025fc4aa65fc15a412d955e8d3385291/transformed/core-1.13.1/res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png --source-path /data/data/com.termux/files/home/.gradle/caches/transforms-4/025fc4aa65fc15a412d955e8d3385291/transformed/core-1.13.1/res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png
+RET: 0
+OUT: b''
+ERR: b''
